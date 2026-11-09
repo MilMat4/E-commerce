@@ -20,7 +20,11 @@ The admin seed script creates an account only if no admin exists. It will not pr
 2. Generate a test Key ID and Key Secret in the Razorpay dashboard.
 3. Put them in the backend `.env` as `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`. Never put the secret in frontend environment variables or commit it.
 4. Enable automatic payment capture in the Razorpay dashboard.
-5. To receive server-side payment notifications, configure a webhook for `payment.captured` at `https://<your-public-backend>/api/payments/razorpay/webhook`, set a private webhook secret, and store it as `RAZORPAY_WEBHOOK_SECRET`. A local server needs a secure public tunnel for Razorpay to reach it; checkout signature verification also works without a webhook during local testing.
+5. Webhooks are optional for local checkout. To receive server-side payment notifications:
+   - In the Razorpay dashboard's **Webhooks** settings, add `https://<your-public-backend>/api/payments/razorpay/webhook` and subscribe to `payment.captured`.
+   - Choose a new, random webhook secret. You can generate one locally with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+   - Enter that same secret in the Razorpay webhook configuration and in the backend `.env` as `RAZORPAY_WEBHOOK_SECRET`. This is a secret you choose; it is separate from `RAZORPAY_KEY_SECRET`. Never put either secret in frontend code or commit/share them.
+   - Razorpay must be able to reach the webhook over HTTPS. For local development, use a secure public tunnel and configure its public HTTPS URL. Checkout signature verification works without a webhook.
 6. Restart the backend after changing `.env`. The frontend starts Checkout using the key ID returned by the backend.
 
 The backend creates the payment amount from current database prices, rounds each unit price to paise before saving order snapshots and totals, reserves stock while payment is pending, verifies the Checkout signature and captured payment with Razorpay, and releases stock for expired/failed attempts. Pending payment reservations expire after 15 minutes. Use Razorpay's published test payment details while in Test Mode; no real charge is made. Do not switch to live keys until account activation, HTTPS, webhook delivery, refund handling, and production monitoring are ready.
