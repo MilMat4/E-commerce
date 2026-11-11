@@ -38,11 +38,14 @@ export function CustomerOrders() {
   const [orders, setOrders] = useState([])
   const [status, setStatus] = useState('loading')
   const location = useLocation()
-  const load = () => {
-    setStatus('loading')
+  const fetchOrders = () => {
     api.get('/orders').then(({ data }) => { setOrders(data.orders); setStatus('success') }).catch(() => setStatus('error'))
   }
-  useEffect(() => { load() }, [])
+  const load = () => {
+    setStatus('loading')
+    fetchOrders()
+  }
+  useEffect(() => { fetchOrders() }, [])
 
   return (
     <div>
@@ -64,11 +67,14 @@ export function CustomerWishlist() {
   const { toggle } = useWishlist()
   const [products, setProducts] = useState([])
   const [status, setStatus] = useState('loading')
-  const load = () => {
-    setStatus('loading')
+  const fetchWishlist = () => {
     api.get('/wishlist').then(({ data }) => { setProducts(data.wishlist); setStatus('success') }).catch(() => setStatus('error'))
   }
-  useEffect(() => { load() }, [])
+  const load = () => {
+    setStatus('loading')
+    fetchWishlist()
+  }
+  useEffect(() => { fetchWishlist() }, [])
 
   const remove = async (id) => {
     try {

@@ -8,21 +8,28 @@ const categoryColors = ['sage', 'peach', 'lavender', 'butter']
 export default function HomePage() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [categoriesError, setCategoriesError] = useState(false)
   const [status, setStatus] = useState('loading')
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.all([
+    Promise.allSettled([
       api.get('/products?limit=4', { signal: controller.signal }),
       api.get('/categories', { signal: controller.signal }),
     ])
-      .then(([productResponse, categoryResponse]) => {
-        setProducts(productResponse.data.products)
-        setCategories(categoryResponse.data.categories)
-        setStatus('success')
-      })
-      .catch((error) => {
-        if (error.code !== 'ERR_CANCELED') setStatus('error')
+      .then(([productResult, categoryResult]) => {
+        if (controller.signal.aborted) return
+        if (productResult.status === 'fulfilled') {
+          setProducts(productResult.value.data.products)
+          setStatus('success')
+        } else {
+          setStatus('error')
+        }
+        if (categoryResult.status === 'fulfilled') {
+          setCategories(categoryResult.value.data.categories)
+        } else {
+          setCategoriesError(true)
+        }
       })
     return () => controller.abort()
   }, [])
@@ -81,7 +88,11 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="muted-copy">Our makers are putting their collections together. Check back soon.</p>
+          <p className="muted-copy">
+            {categoriesError
+              ? 'Categories are unavailable right now. Browse the collection instead.'
+              : 'Our makers are putting their collections together. Check back soon.'}
+          </p>
         )}
       </section>
 

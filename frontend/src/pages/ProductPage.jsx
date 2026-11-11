@@ -12,6 +12,7 @@ export default function ProductPage() {
   const { isSaved, toggle } = useWishlist()
   const [product, setProduct] = useState(null)
   const [status, setStatus] = useState('loading')
+  const [loadedProductId, setLoadedProductId] = useState('')
   const [cartStatus, setCartStatus] = useState('')
   const [addingToCart, setAddingToCart] = useState(false)
   const [savingWish, setSavingWish] = useState(false)
@@ -28,14 +29,17 @@ export default function ProductPage() {
 
   useEffect(() => {
     const controller = new AbortController()
-    setStatus('loading')
     api.get(`/products/${productId}`, { signal: controller.signal })
       .then(({ data }) => {
         setProduct(data.product)
+        setLoadedProductId(productId)
         setStatus('success')
       })
       .catch((error) => {
-        if (error.code !== 'ERR_CANCELED') setStatus(error.response?.status === 404 ? 'not-found' : 'error')
+        if (error.code !== 'ERR_CANCELED') {
+          setLoadedProductId(productId)
+          setStatus(error.response?.status === 404 ? 'not-found' : 'error')
+        }
       })
     return () => controller.abort()
   }, [productId])
@@ -74,11 +78,13 @@ export default function ProductPage() {
     return () => controller.abort()
   }, [productId, user?._id, user?.role])
 
-  if (status === 'loading') return <div className="page-message"><span className="loading-spinner" /> Loading this lovely find…</div>
-  if (status === 'not-found') {
+  const productStatus = loadedProductId === productId ? status : 'loading'
+
+  if (productStatus === 'loading') return <div className="page-message"><span className="loading-spinner" /> Loading this lovely find…</div>
+  if (productStatus === 'not-found') {
     return <div className="page-message"><h1>We can’t find that one.</h1><Link className="button button-dark" to="/products">Back to the collection</Link></div>
   }
-  if (status === 'error') {
+  if (productStatus === 'error') {
     return <div className="page-message"><h1>Something didn’t load.</h1><p>Check that the backend is running, then try again.</p></div>
   }
 

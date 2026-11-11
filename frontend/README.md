@@ -1,38 +1,44 @@
 # Morrow Market frontend
 
-Responsive React storefront and role-based shopping/admin experiences connected to the Express API, using a consistent glassmorphism-inspired visual style.
+Responsive React storefront and role-based shopping and administration experiences, connected to the Express API. The interface uses a glassmorphism-inspired visual style.
 
 ## Run locally
 
-1. Start MongoDB and the backend by following `../backend/README.md`.
-2. From this folder, run `npm install`.
-3. Copy `.env.example` to `.env` if the API is not at `http://localhost:5000/api`, then set `VITE_API_URL`.
-4. Run `npm run dev` and open the local address printed by Vite.
+1. Start MongoDB and the backend by following [the backend setup guide](../backend/README.md).
+2. From this folder, install dependencies with `npm install`.
+3. Copy `.env.example` to `.env` if the backend is not at `http://localhost:5000/api`, then set `VITE_API_URL`.
+4. Start Vite with `npm run dev` and open the local address it prints.
 
-## Included
+## Features
 
-- Responsive storefront landing page with API-driven categories and featured products
-- Product catalog with search, category filtering, sorting, and pagination
-- Product details loaded from the backend
-- Registration and login connected to the auth API
-- Customer cart with quantity controls, delivery details, and simulated checkout
-- Customer account overview, order history, wishlist, and profile editing
-- Seller overview, product management with image upload, and order fulfillment
-- Admin overview, user/seller application management, category management, product moderation, and order status controls
-- Shared cart and wishlist state synchronized with the API
-- Shared Axios client adds the JWT to protected requests
-- Glassmorphism styling, responsive layouts, and loading, empty, not-found, and API error states
+- Responsive storefront, product catalog, category filters, search, sorting, and pagination
+- Product details with public reviews and verified-purchase review submission
+- Customer registration, login, cart, wishlist, order history, and profile
+- Razorpay Checkout integration for test payments
+- Seller product management, image uploads, and seller-owned order fulfillment
+- Admin user, seller, category, product, order, and review moderation tools
+- Redux Toolkit for shared auth, cart, wishlist, and admin state
+- Axios client with JWT request handling and expired-session cleanup
+- Loading, empty, not-found, and API error states
 
-## Learn the file structure
+## Project structure
 
-- `src/services/api.js` creates one Axios client for the whole frontend.
-- `src/context/AuthContext.jsx` shares the current account and login/logout methods across pages.
-- `src/context/CartContext.jsx` and `src/context/WishlistContext.jsx` keep shopping state shared between pages.
-- `src/components/` contains layout and reusable product cards.
+- `src/services/api.js` configures the shared Axios client and API URL.
+- `src/store/` contains the Redux store, feature slices, hooks, and session synchronization.
+- `src/components/` contains navigation, page layout, route guards, and reusable product cards.
 - `src/pages/` contains storefront, customer, seller, admin, and authentication screens.
 - `src/App.jsx` connects URL paths to page components.
-- `src/App.css` contains responsive page and glass styles; `src/index.css` contains shared base styles.
+- `src/App.css` contains page and responsive styles; `src/index.css` contains shared base styles.
 
-## Demo limitations
+## Checks
 
-Checkout creates an order through the API but does not process a real payment. Product images are uploaded to the backend's local storage. For this learning/demo project, JWTs are saved in browser local storage; production applications should assess safer session approaches and XSS protections.
+```powershell
+npm run build
+npm run lint
+```
+
+## Development notes
+
+- Razorpay payments require test credentials in the backend `.env`; see [the backend Razorpay guide](../backend/README.md#configure-razorpay-test-checkout). Do not use live credentials for local testing.
+- Uploaded product images are stored on the backend's local filesystem.
+- JWTs are stored in browser local storage for this learning project. Production applications should assess safer session strategies and XSS protections.

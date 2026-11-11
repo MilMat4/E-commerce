@@ -69,7 +69,7 @@ export default function ProductsPage() {
       }}>
         <label className="sr-only" htmlFor="product-search">Search products</label>
         <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4 4" /></svg>
-        <input defaultValue={search} id="product-search" name="search" placeholder="Looking for something lovely?" />
+        <input key={search} defaultValue={search} id="product-search" name="search" placeholder="Looking for something lovely?" />
         <button type="submit">Search</button>
       </form>
       <div className="catalog-toolbar">

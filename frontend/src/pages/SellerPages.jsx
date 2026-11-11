@@ -48,21 +48,21 @@ export function SellerProducts() {
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const load = async () => {
-    setStatus('loading')
-    try {
-      const [{ data: productData }, { data: categoryData }] = await Promise.all([
-        api.get('/products/mine'),
-        api.get('/categories'),
-      ])
+  const fetchProducts = () => Promise.all([
+    api.get('/products/mine'),
+    api.get('/categories'),
+  ])
+    .then(([{ data: productData }, { data: categoryData }]) => {
       setProducts(productData.products)
       setCategories(categoryData.categories)
       setStatus('success')
-    } catch {
-      setStatus('error')
-    }
+    })
+    .catch(() => setStatus('error'))
+  const load = () => {
+    setStatus('loading')
+    return fetchProducts()
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { fetchProducts() }, [])
 
   const startEdit = (product) => {
     setEditing(product)
@@ -164,11 +164,14 @@ export function SellerOrders() {
   const [error, setError] = useState('')
   const [busyItem, setBusyItem] = useState('')
 
-  const load = () => {
-    setStatus('loading')
+  const fetchOrders = () => {
     api.get('/orders').then(({ data }) => { setOrders(data.orders); setStatus('success') }).catch(() => setStatus('error'))
   }
-  useEffect(() => { load() }, [])
+  const load = () => {
+    setStatus('loading')
+    fetchOrders()
+  }
+  useEffect(() => { fetchOrders() }, [])
 
   const advance = async (order, item) => {
     const next = { pending: 'confirmed', confirmed: 'shipped', shipped: 'delivered' }[item.fulfillmentStatus]
