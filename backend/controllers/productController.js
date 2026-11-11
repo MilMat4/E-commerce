@@ -14,8 +14,17 @@ const removeUploadedFiles = async (files = []) => {
 
 const removeStoredImages = async (imagePaths = []) => {
   const uploadDirectory = path.join(__dirname, '../uploads/products');
+  const unusedPaths = [];
+  for (const imagePath of imagePaths) {
+    if (typeof imagePath !== 'string' || !imagePath.startsWith('/uploads/products/')) continue;
+    try {
+      if (!(await Product.exists({ images: imagePath }))) unusedPaths.push(imagePath);
+    } catch (error) {
+      console.error(`Could not check references for old product image ${imagePath}:`, error);
+    }
+  }
   const results = await Promise.allSettled(
-    imagePaths.map((imagePath) => fs.unlink(path.join(uploadDirectory, path.basename(imagePath))))
+    unusedPaths.map((imagePath) => fs.unlink(path.join(uploadDirectory, path.basename(imagePath))))
   );
   results.filter((result) => result.status === 'rejected').forEach((result) => {
     if (result.reason.code !== 'ENOENT') console.error('Could not remove old product image:', result.reason);

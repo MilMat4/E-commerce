@@ -74,13 +74,13 @@ export default function HomePage() {
         </div>
         {categories.length > 0 ? (
           <div className="category-grid">
-            {categories.slice(0, 4).map((category, index) => (
+            {categories.map((category, index) => (
               <Link
                 className={`category-tile category-${categoryColors[index % categoryColors.length]}`}
                 key={category._id}
                 to={`/products?category=${category._id}`}
               >
-                <span className="category-number">0{index + 1}</span>
+                <span className="category-number">{String(index + 1).padStart(2, '0')}</span>
                 <span className="category-title">{category.name}</span>
                 <span aria-hidden="true" className="category-arrow">↗</span>
                 <span aria-hidden="true" className="category-orbit">{['◌', '✳', '◍', '✺'][index % 4]}</span>

@@ -14,8 +14,11 @@ export default function ProductsPage() {
   const search = searchParams.get('search') || ''
   const category = searchParams.get('category') || ''
   const sort = searchParams.get('sort') || 'newest'
+  const minPrice = searchParams.get('minPrice') || ''
+  const maxPrice = searchParams.get('maxPrice') || ''
   const page = Number(searchParams.get('page') || 1)
-  const requestKey = `${search}\u0000${category}\u0000${sort}\u0000${page}`
+  const requestKey = `${search}\u0000${category}\u0000${sort}\u0000${minPrice}\u0000${maxPrice}\u0000${page}`
+  const [priceError, setPriceError] = useState('')
   const isLoading = loadedRequest !== requestKey
 
   useEffect(() => {
@@ -30,7 +33,15 @@ export default function ProductsPage() {
   useEffect(() => {
     const controller = new AbortController()
     api.get('/products', {
-      params: { search: search || undefined, category: category || undefined, sort, page, limit: 12 },
+      params: {
+        search: search || undefined,
+        category: category || undefined,
+        minPrice: minPrice || undefined,
+        maxPrice: maxPrice || undefined,
+        sort,
+        page,
+        limit: 12,
+      },
       signal: controller.signal,
     })
       .then(({ data }) => {
@@ -46,12 +57,37 @@ export default function ProductsPage() {
         }
       })
     return () => controller.abort()
-  }, [search, category, sort, page, requestKey])
+  }, [search, category, sort, minPrice, maxPrice, page, requestKey])
 
   const updateQuery = (key, value) => {
     const next = new URLSearchParams(searchParams)
     if (value) next.set(key, value)
     else next.delete(key)
+    if (key !== 'page') next.delete('page')
+    setSearchParams(next)
+  }
+
+  const applyPriceFilter = (event) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const nextMinPrice = String(formData.get('minPrice') || '').trim()
+    const nextMaxPrice = String(formData.get('maxPrice') || '').trim()
+    if ((nextMinPrice && (!Number.isFinite(Number(nextMinPrice)) || Number(nextMinPrice) < 0))
+      || (nextMaxPrice && (!Number.isFinite(Number(nextMaxPrice)) || Number(nextMaxPrice) < 0))) {
+      setPriceError('Enter non-negative prices.')
+      return
+    }
+    if (nextMinPrice && nextMaxPrice && Number(nextMinPrice) > Number(nextMaxPrice)) {
+      setPriceError('Minimum price cannot exceed maximum price.')
+      return
+    }
+
+    setPriceError('')
+    const next = new URLSearchParams(searchParams)
+    if (nextMinPrice) next.set('minPrice', nextMinPrice)
+    else next.delete('minPrice')
+    if (nextMaxPrice) next.set('maxPrice', nextMaxPrice)
+    else next.delete('maxPrice')
     next.delete('page')
     setSearchParams(next)
   }
@@ -90,6 +126,14 @@ export default function ProductsPage() {
           </select>
         </div>
       </div>
+      <form className="catalog-toolbar price-filter" key={`${minPrice}|${maxPrice}`} onSubmit={applyPriceFilter}>
+        <label htmlFor="minimum-price">Min price</label>
+        <input id="minimum-price" min="0" name="minPrice" placeholder="Any" step="0.01" type="number" defaultValue={minPrice} />
+        <label htmlFor="maximum-price">Max price</label>
+        <input id="maximum-price" min="0" name="maxPrice" placeholder="Any" step="0.01" type="number" defaultValue={maxPrice} />
+        <button type="submit">Apply price</button>
+      </form>
+      {priceError && <p className="form-error" role="alert">{priceError}</p>}
       {categoriesError && (
         <p className="catalog-notice" role="status">
           Categories couldn’t be loaded, but you can still browse all available products.

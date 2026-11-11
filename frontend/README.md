@@ -42,3 +42,4 @@ npm run lint
 - Razorpay payments require test credentials in the backend `.env`; see [the backend Razorpay guide](../backend/README.md#configure-razorpay-test-checkout). Do not use live credentials for local testing.
 - Uploaded product images are stored on the backend's local filesystem.
 - JWTs are stored in browser local storage for this learning project. Production applications should assess safer session strategies and XSS protections.
+- A no-gateway demo checkout is hidden by default. Enable it only for local demos with `VITE_DEMO_CHECKOUT_ENABLED=true` in the frontend and `DEMO_CHECKOUT_ENABLED=true` in the backend; the backend disables demo checkout in production.

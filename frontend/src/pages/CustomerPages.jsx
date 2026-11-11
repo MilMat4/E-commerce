@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import api, { apiOrigin } from '../services/api'
 import { useAuth, useWishlist } from '../store/hooks'
 import { formatDate, formatPrice, imageUrl } from '../utils/format'
@@ -23,6 +23,10 @@ export function CustomerOverview() {
             <StatCard label="Saved for later" value={dashboard.wishlistItems} note="A little inspiration" />
             <StatCard label="Orders placed" value={dashboard.totalOrders} note={`${dashboard.pendingOrders} still in progress`} />
           </div>
+          <div className="table-section-heading"><h3>Recent orders</h3></div>
+          {dashboard.recentOrders.length === 0
+            ? <EmptyPanel title="Your next favourite thing is out there." text="Orders you place will show up here." href="/products" linkText="Explore the market" />
+            : <div className="order-list">{dashboard.recentOrders.map((order) => <OrderCard key={order._id} order={order} />)}</div>}
           <div className="shortcut-grid">
             <Link className="shortcut-card glass-panel" to="/account/orders"><span>→</span><strong>Follow your orders</strong><small>See where your finds are on their way.</small></Link>
             <Link className="shortcut-card glass-panel" to="/account/wishlist"><span>✳</span><strong>Your saved things</strong><small>Everything you’ve had your eye on.</small></Link>
@@ -59,6 +63,38 @@ export function CustomerOrders() {
           {orders.map((order) => <OrderCard key={order._id} order={order} />)}
         </div>
       )}
+    </div>
+  )
+}
+
+export function CustomerOrderDetail() {
+  const { orderId } = useParams()
+  const [order, setOrder] = useState(null)
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    const controller = new AbortController()
+    api.get(`/orders/${orderId}`, { signal: controller.signal })
+      .then(({ data }) => {
+        setOrder(data.order)
+        setStatus('success')
+      })
+      .catch((error) => {
+        if (error.code !== 'ERR_CANCELED') setStatus('error')
+      })
+    return () => controller.abort()
+  }, [orderId])
+
+  return (
+    <div>
+      <div className="subpage-heading">
+        <p className="eyebrow">A closer look</p>
+        <h2>Order <em>details.</em></h2>
+        <Link className="back-link" to="/account/orders">← Back to your orders</Link>
+      </div>
+      {status === 'loading' && <LoadingState label="Finding your order…" />}
+      {status === 'error' && <ErrorState message="We couldn’t load this order. It may not belong to your account." />}
+      {status === 'success' && order && <OrderCard order={order} showDetailsLink={false} />}
     </div>
   )
 }
@@ -164,7 +200,7 @@ export function StatCard({ label, value, note }) {
   return <article className="stat-card glass-panel"><span>{label}</span><strong>{value ?? '—'}</strong><small>{note}</small></article>
 }
 
-export function OrderCard({ order }) {
+export function OrderCard({ order, showDetailsLink = true }) {
   return (
     <article className="order-card glass-panel">
       <div className="order-card-heading"><div><p className="product-category">Placed {formatDate(order.createdAt)}</p><strong>Order #{String(order._id).slice(-8).toUpperCase()}</strong></div><StatusPill value={order.orderStatus} /></div>
@@ -179,6 +215,7 @@ export function OrderCard({ order }) {
       </div>
       <div className="order-card-total"><span>Total</span><strong>{formatPrice(order.totalAmount)}</strong></div>
       {order.shippingAddress?.city && <p className="order-address">Delivering to {order.shippingAddress.city}, {order.shippingAddress.country}</p>}
+      {showDetailsLink && <Link className="quiet-link" to={`/account/orders/${order._id}`}>View order details <span aria-hidden="true">↗</span></Link>}
     </article>
   )
 }

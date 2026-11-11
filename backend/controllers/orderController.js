@@ -3,6 +3,13 @@ const { isValidObjectId } = require('../utils/validation');
 const { sendControllerError } = require('../utils/apiError');
 const { getOverallOrderStatus } = require('../utils/orderStatus');
 
+const SELLER_VISIBLE_PAYMENT_STATUSES = ['paid', 'not_required'];
+
+const canSellerViewOrder = (order, sellerId) => (
+  SELLER_VISIBLE_PAYMENT_STATUSES.includes(order.paymentStatus)
+  && order.items.some((item) => item.seller.toString() === sellerId.toString())
+);
+
 const sellerOrderView = (order, sellerId) => {
   const sellerItems = order.items.filter((item) => {
     const itemSellerId = item.seller?._id || item.seller;
@@ -26,7 +33,7 @@ const getOrders = async (req, res) => {
     if (req.user.role === 'customer') filter.customer = req.user._id;
     if (req.user.role === 'seller') {
       filter['items.seller'] = req.user._id;
-      filter.paymentStatus = 'paid';
+      filter.paymentStatus = { $in: SELLER_VISIBLE_PAYMENT_STATUSES };
     }
 
     const orders = await Order.find(filter)
@@ -56,7 +63,7 @@ const getOrderById = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
     const ownsOrder = order.customer._id.toString() === req.user._id.toString();
-    const sellerHasItems = order.items.some((item) => item.seller.toString() === req.user._id.toString());
+    const sellerHasItems = canSellerViewOrder(order, req.user._id);
     if (req.user.role !== 'admin' && !ownsOrder && !sellerHasItems) {
       return res.status(403).json({ success: false, message: 'You are not allowed to view this order.' });
     }
@@ -83,8 +90,8 @@ const updateSellerItemStatus = async (req, res) => {
     if (order.orderStatus === 'cancelled') {
       return res.status(400).json({ success: false, message: 'Cancelled orders cannot be fulfilled.' });
     }
-    if (order.paymentStatus !== 'paid') {
-      return res.status(409).json({ success: false, message: 'A paid order is required before fulfillment.' });
+    if (!SELLER_VISIBLE_PAYMENT_STATUSES.includes(order.paymentStatus)) {
+      return res.status(409).json({ success: false, message: 'A paid or demo order is required before fulfillment.' });
     }
     const item = order.items.id(itemId);
     if (!item) return res.status(404).json({ success: false, message: 'Order item not found.' });
@@ -121,4 +128,5 @@ module.exports = {
   getOrders,
   getOrderById,
   updateSellerItemStatus,
+  canSellerViewOrder,
 };

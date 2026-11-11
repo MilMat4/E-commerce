@@ -85,4 +85,4 @@ const validateImageContent = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, validateImageContent };
+module.exports = { upload, validateImageContent, fileFilter };

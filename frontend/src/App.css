@@ -2,6 +2,55 @@
   min-height: 100vh;
 }
 
+.detail-image-gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-image-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detail-image-thumbnails button {
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.detail-image-thumbnails button.is-selected {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.detail-image-thumbnails img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.catalog-toolbar.price-filter {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.catalog-toolbar.price-filter input {
+  width: min(140px, 28vw);
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: inherit;
+}
+
 .announcement {
   display: flex;
   min-height: 33px;
@@ -3395,5 +3444,246 @@ h2 em {
   .auth-panel {
     width: min(440px, calc(100% - 36px));
     padding: 27px 20px;
+  }
+}
+
+.site-header.site-header {
+  border-bottom-color: rgba(101, 70, 184, .13);
+  background: rgba(248, 245, 253, .88);
+}
+
+.eyebrow {
+  color: #7455a8;
+}
+
+h1 em,
+h2 em,
+.dashboard-heading h1 em,
+.shopping-heading h1 em,
+.subpage-heading h2 em,
+.order-summary h2 em {
+  color: #7455c8;
+}
+
+.dashboard-nav > a,
+.hero-description,
+.summary-total,
+.form-field label,
+.form-panel label,
+.order-summary label,
+.order-admin-actions label {
+  color: var(--muted);
+}
+
+.dashboard-nav > a:hover,
+.dashboard-nav > a.active {
+  color: #493179;
+  background: rgba(226, 216, 249, .75);
+}
+
+.user-avatar,
+.category-mini-mark {
+  color: #543990;
+  background: linear-gradient(145deg, #e9ddff, #f8d9e8);
+}
+
+.management-product-image,
+.cart-thumb {
+  color: #543990;
+  background: linear-gradient(145deg, #ede4ff, #f6dcd8);
+}
+
+.status-pill {
+  border-color: rgba(101, 70, 184, .14);
+  color: #543990;
+  background: rgba(232, 224, 249, .8);
+}
+
+.status-pending,
+.status-confirmed,
+.status-partially_fulfilled {
+  color: #805c9a;
+  background: rgba(242, 229, 250, .9);
+}
+
+.status-inactive,
+.status-cancelled,
+.status-rejected {
+  color: #a64f61;
+  background: rgba(255, 227, 234, .9);
+}
+
+.status-shipped {
+  color: #486f9a;
+  background: rgba(222, 237, 252, .9);
+}
+
+.status-delivered,
+.status-active,
+.status-approved {
+  color: #4a715e;
+  background: rgba(224, 242, 231, .9);
+}
+
+.success-message,
+.notice-banner {
+  border-color: rgba(92, 139, 112, .22);
+  color: #416b55;
+  background: rgba(226, 245, 233, .9);
+}
+
+.inline-error,
+.form-error {
+  border-color: rgba(196, 86, 112, .22);
+  color: #98485b;
+  background: rgba(255, 232, 237, .92);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea,
+.form-panel input,
+.form-panel select,
+.form-panel textarea,
+.order-summary input,
+.order-admin-actions select,
+.filter-heading select,
+.auth-form input,
+.auth-form select,
+.catalog-toolbar select,
+.catalog-toolbar.price-filter input {
+  min-width: 0;
+  border: 1px solid rgba(101, 70, 184, .22);
+  border-radius: 11px;
+  color: var(--ink);
+  background: rgba(255, 252, 255, .9);
+  box-shadow: inset 0 1px 2px rgba(55, 37, 94, .025);
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus,
+.form-panel input:focus,
+.form-panel select:focus,
+.form-panel textarea:focus,
+.order-summary input:focus,
+.order-admin-actions select:focus,
+.filter-heading select:focus,
+.auth-form input:focus,
+.auth-form select:focus,
+.catalog-toolbar select:focus,
+.catalog-toolbar.price-filter input:focus {
+  border-color: #8261d2;
+  background: #fffaff;
+  box-shadow: 0 0 0 4px rgba(130, 97, 210, .12);
+  outline: none;
+}
+
+.catalog-toolbar select {
+  min-height: 40px;
+  padding: 8px 30px 8px 12px;
+}
+
+.catalog-toolbar.price-filter {
+  justify-content: flex-start;
+  margin-top: -19px;
+  padding: 10px 0;
+}
+
+.catalog-toolbar.price-filter label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.catalog-toolbar.price-filter input {
+  width: min(150px, 24vw);
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.catalog-toolbar.price-filter button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(101, 70, 184, .36);
+  border-radius: 999px;
+  color: #50358f;
+  background: rgba(255, 252, 255, .8);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.catalog-toolbar.price-filter button:hover {
+  border-color: #6546b8;
+  color: #fffaff;
+  background: linear-gradient(120deg, #7655ce, #493184);
+  transform: translateY(-1px);
+}
+
+.button,
+.catalog-toolbar.price-filter button {
+  border-radius: 999px;
+}
+
+.button-outline {
+  border-color: rgba(101, 70, 184, .38);
+  color: #50358f;
+  background: rgba(255, 252, 255, .38);
+}
+
+.button-outline:hover:not(:disabled) {
+  border-color: #6546b8;
+  color: #382568;
+  background: rgba(232, 224, 249, .72);
+}
+
+.remove-link,
+.wishlist-heart.is-saved,
+.wishlist-detail-button.is-saved {
+  color: #a64f61;
+}
+
+.cart-feedback {
+  color: #543990;
+}
+
+.detail-stock span {
+  background: #63a984;
+  box-shadow: 0 0 0 4px rgba(99, 169, 132, .16);
+}
+
+.detail-image-thumbnails button {
+  border-color: rgba(101, 70, 184, .2);
+  border-radius: 12px;
+  background: rgba(255, 252, 255, .88);
+}
+
+.detail-image-thumbnails button.is-selected {
+  outline-color: #7655ce;
+}
+
+.page-message,
+.empty-state {
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .catalog-toolbar.price-filter {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px 12px;
+    margin-top: -19px;
+  }
+
+  .catalog-toolbar.price-filter input,
+  .catalog-toolbar.price-filter button {
+    width: 100%;
+  }
+
+  .catalog-toolbar.price-filter button {
+    grid-column: 1 / -1;
   }
 }

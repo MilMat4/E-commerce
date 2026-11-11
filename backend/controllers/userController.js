@@ -11,7 +11,9 @@ const getUsers = async (req, res) => {
     if (['active', 'pending', 'inactive'].includes(req.query.status)) {
       filter.status = req.query.status;
     }
-    const users = await User.find(filter).sort({ createdAt: -1 });
+    const users = await User.find(filter)
+      .select('name email role status isApprovedSeller createdAt')
+      .sort({ createdAt: -1 });
     return res.status(200).json({
       success: true,
       count: users.length,

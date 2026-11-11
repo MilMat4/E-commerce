@@ -2,13 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiOrigin } from '../services/api'
 import { useAuth, useWishlist } from '../store/hooks'
-import { imageUrl as resolveImageUrl } from '../utils/format'
-
-const formatPrice = (price) => new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-}).format(price)
+import { formatPrice, imageUrl as resolveImageUrl } from '../utils/format'
 
 export default function ProductCard({ product, index = 0 }) {
   const { user } = useAuth()
@@ -16,14 +10,15 @@ export default function ProductCard({ product, index = 0 }) {
   const saved = isSaved(product._id)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [imageUnavailable, setImageUnavailable] = useState(false)
   const image = resolveImageUrl(product.images?.[0], apiOrigin)
 
   return (
     <article className="product-card" style={{ '--card-index': index }}>
       <div className={`product-image image-tone-${index % 4}`}>
         <Link aria-label={`View ${product.name}`} className="product-card-image-link" to={`/products/${product._id}`}>
-        {image ? (
-          <img alt={product.name} loading="lazy" src={image} />
+        {image && !imageUnavailable ? (
+          <img alt={product.name} loading="lazy" onError={() => setImageUnavailable(true)} src={image} />
         ) : (
           <span className="image-placeholder" aria-hidden="true">{product.name.slice(0, 1)}</span>
         )}

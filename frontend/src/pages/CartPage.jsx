@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api, { apiOrigin } from '../services/api'
 import { useAuth, useCart } from '../store/hooks'
-import { formatPrice, imageUrl } from '../utils/format'
+import { formatPrice, imageUrl, toPaise } from '../utils/format'
 
 const loadRazorpayCheckout = () => new Promise((resolve) => {
   if (window.Razorpay) {
@@ -27,8 +27,8 @@ export default function CartPage() {
 
   const total = useMemo(() => cart.reduce((sum, item) => {
     const product = item.product
-    return sum + (product?.price || 0) * item.quantity
-  }, 0), [cart])
+    return sum + toPaise(product?.price || 0) * item.quantity
+  }, 0) / 100, [cart])
 
   const changeQuantity = async (item, quantity) => {
     try {
@@ -110,6 +110,21 @@ export default function CartPage() {
     }
   }
 
+  const placeDemoOrder = async () => {
+    setSubmitting(true)
+    setError('')
+    setMessage('')
+    try {
+      const { data } = await api.post('/orders/demo', { shippingAddress: address })
+      await refreshCart()
+      navigate(`/account/orders?placed=${data.order._id}`, { state: { placed: true } })
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'We could not place the demo order. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (loading) return <div className="section-wrap"><div className="loading-state"><span className="loading-spinner" />Gathering your cart…</div></div>
 
   return (
@@ -143,7 +158,7 @@ export default function CartPage() {
                   <div className="cart-item-copy">
                     <p className="product-category">{product.category?.name || 'A thoughtful find'}</p>
                     <Link className="product-name" to={`/products/${product._id}`}>{product.name}</Link>
-                    <p className="cart-unit-price">{formatPrice(product.price)} each</p>
+                    <p className="cart-unit-price">{formatPrice(toPaise(product.price) / 100)} each</p>
                     <div className="quantity-control">
                       <button aria-label={`Decrease ${product.name} quantity`} disabled={item.quantity <= 1} onClick={() => changeQuantity(item, item.quantity - 1)} type="button">−</button>
                       <span>{item.quantity}</span>
@@ -151,7 +166,7 @@ export default function CartPage() {
                     </div>
                   </div>
                   <div className="cart-item-end">
-                    <strong>{formatPrice(product.price * item.quantity)}</strong>
+                    <strong>{formatPrice(toPaise(product.price) * item.quantity / 100)}</strong>
                     <button className="remove-link" onClick={() => changeQuantity(item, 0)} type="button">Remove</button>
                   </div>
                 </article>
@@ -179,6 +194,11 @@ export default function CartPage() {
             <button className="button button-dark auth-submit" disabled={submitting} type="submit">
               {submitting ? 'Opening secure checkout…' : 'Continue to payment'} <span aria-hidden="true">↗</span>
             </button>
+            {import.meta.env.VITE_DEMO_CHECKOUT_ENABLED === 'true' && (
+              <button className="button button-outline auth-submit" disabled={submitting} onClick={placeDemoOrder} type="button">
+                {submitting ? 'Placing demo order…' : 'Place demo order'} <span aria-hidden="true">↗</span>
+              </button>
+            )}
           </form>
         </div>
       )}

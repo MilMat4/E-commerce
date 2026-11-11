@@ -238,6 +238,112 @@ const createPaymentOrder = async (req, res) => {
   }
 };
 
+const createDemoOrder = async (req, res) => {
+  if (process.env.NODE_ENV?.toLowerCase() === 'production' || process.env.DEMO_CHECKOUT_ENABLED !== 'true') {
+    return res.status(403).json({ success: false, message: 'Demo checkout is not enabled.' });
+  }
+
+  const stockUpdates = [];
+  let order;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    if (!user.cart?.length) {
+      return res.status(400).json({ success: false, message: 'Your cart is empty.' });
+    }
+
+    const address = req.body?.shippingAddress;
+    if (!address || typeof address !== 'object' || Array.isArray(address)
+      || !['street', 'city', 'country', 'postalCode'].every((field) => (
+        typeof address[field] === 'string' && address[field].trim()
+      ))) {
+      return res.status(400).json({ success: false, message: 'Complete your shipping address before placing the order.' });
+    }
+
+    const items = [];
+    let totalAmountPaise = 0;
+    for (const cartItem of user.cart) {
+      const quantity = parsePositiveInteger(cartItem.quantity);
+      if (!quantity || !isValidObjectId(cartItem.product)) {
+        const error = new Error('Cart contains an invalid item. Remove it and try again.');
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const product = await Product.findOneAndUpdate(
+        { _id: cartItem.product, status: 'active', stock: { $gte: quantity } },
+        { $inc: { stock: -quantity } },
+        { new: true }
+      );
+      if (!product) {
+        const error = new Error('A cart product is unavailable or has insufficient stock.');
+        error.statusCode = 400;
+        throw error;
+      }
+      stockUpdates.push({ productId: product._id, quantity });
+      if (!(await Category.exists({ _id: product.category, status: 'active' }))) {
+        const error = new Error('A cart product belongs to an inactive category.');
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const unitPricePaise = toPaise(product.price);
+      items.push({
+        product: product._id,
+        productName: product.name,
+        unitPrice: fromPaise(unitPricePaise),
+        quantity,
+        seller: product.seller,
+      });
+      totalAmountPaise += unitPricePaise * quantity;
+    }
+
+    order = await Order.create({
+      customer: user._id,
+      items,
+      totalAmount: fromPaise(totalAmountPaise),
+      orderStatus: 'pending',
+      paymentMethod: 'demo',
+      paymentStatus: 'not_required',
+      shippingAddress: Object.fromEntries(
+        ['street', 'city', 'country', 'postalCode'].map((field) => [field, address[field].trim()])
+      ),
+    });
+    await clearPurchasedCartItems(order);
+    return res.status(201).json({
+      success: true,
+      message: 'Demo order placed successfully.',
+      order,
+    });
+  } catch (error) {
+    let recoveryFailed = false;
+    if (order) {
+      try {
+        await restoreReservedStock(order);
+        await Order.deleteOne({ _id: order._id });
+      } catch (recoveryError) {
+        recoveryFailed = true;
+        console.error('Could not recover inventory after demo checkout failed:', recoveryError);
+      }
+    } else {
+      const results = await Promise.allSettled(stockUpdates.map(({ productId, quantity }) => (
+        Product.updateOne({ _id: productId }, { $inc: { stock: quantity } })
+      )));
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          recoveryFailed = true;
+          console.error('Could not restore stock after demo checkout failed:', result.reason);
+        }
+      });
+    }
+    if (recoveryFailed) {
+      return res.status(500).json({ success: false, message: 'Demo checkout failed and inventory recovery needs administrator review.' });
+    }
+    if (error.statusCode) return res.status(error.statusCode).json({ success: false, message: error.message });
+    return sendControllerError(res, error, 'Unable to place demo order.');
+  }
+};
+
 const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id: gatewayOrderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
@@ -275,6 +381,11 @@ const cancelPaymentOrder = async (req, res) => {
     const order = await Order.findOne({ _id: req.params.id, customer: req.user._id });
     if (!order) return res.status(404).json({ success: false, message: 'Payment order not found.' });
     if (order.paymentStatus !== 'pending') {
+      if (order.paymentStatus === 'failed' && order.orderStatus !== 'cancelled') {
+        order.orderStatus = 'cancelled';
+        await order.save();
+      }
+      if (order.paymentStatus === 'failed') await restoreReservedStock(order);
       return res.status(200).json({ success: true, paymentStatus: order.paymentStatus });
     }
 
@@ -289,7 +400,7 @@ const cancelPaymentOrder = async (req, res) => {
 
     const cancelled = await Order.findOneAndUpdate(
       { _id: order._id, customer: req.user._id, paymentStatus: 'pending' },
-      { $set: { paymentStatus: 'failed' } },
+      { $set: { paymentStatus: 'failed', orderStatus: 'cancelled' } },
       { new: true }
     );
     if (cancelled) await restoreReservedStock(cancelled);
@@ -352,11 +463,15 @@ const expirePendingPayments = async () => {
 
         const expired = await Order.findOneAndUpdate(
           { _id: order._id, paymentStatus: 'pending', paymentExpiresAt: { $lte: new Date() } },
-          { $set: { paymentStatus: 'failed' } },
+          { $set: { paymentStatus: 'failed', orderStatus: 'cancelled' } },
           { new: true }
         );
         if (expired) await restoreReservedStock(expired);
       } else {
+        if (order.orderStatus !== 'cancelled') {
+          order.orderStatus = 'cancelled';
+          await order.save();
+        }
         await restoreReservedStock(order);
       }
     } catch (error) {
@@ -367,6 +482,7 @@ const expirePendingPayments = async () => {
 
 module.exports = {
   createPaymentOrder,
+  createDemoOrder,
   verifyPayment,
   cancelPaymentOrder,
   razorpayWebhook,

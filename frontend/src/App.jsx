@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage'
 import CartPage from './pages/CartPage'
 import {
   CustomerOrders,
+  CustomerOrderDetail,
   CustomerOverview,
   CustomerProfile,
   CustomerWishlist,
@@ -55,6 +56,7 @@ export default function App() {
               >
                 <Route element={<CustomerOverview />} index />
                 <Route element={<CustomerOrders />} path="orders" />
+                <Route element={<CustomerOrderDetail />} path="orders/:orderId" />
                 <Route element={<CustomerWishlist />} path="wishlist" />
                 <Route element={<CustomerProfile />} path="profile" />
               </Route>

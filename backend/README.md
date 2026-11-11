@@ -6,7 +6,7 @@ This is the local-development backend for the multi-vendor e-commerce proposal. 
 
 1. Install Node.js and MongoDB Community Server. Make sure the MongoDB service is running.
 2. From this folder, copy `.env.example` to `.env`.
-3. Generate a private JWT secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` and place it in `.env`. Set `ADMIN_PASSWORD` to a private password of at least 8 characters. The sample values are placeholders.
+3. Generate a private JWT secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` and place it in `.env`. Set `ADMIN_PASSWORD` to a private password of at least 8 characters. Set `FRONTEND_ORIGIN` to the browser origin(s) allowed to call the API, comma-separated if needed. The sample values are placeholders.
 4. Install dependencies with `npm install`.
 5. Create the first admin once with `npm run seed:admin`.
 6. Start the API with `npm run dev`.
@@ -70,6 +70,7 @@ All routes are prefixed with `/api`.
 | Wishlist | `GET /wishlist`, `POST /wishlist/add`, `DELETE /wishlist/remove/:productId` | Customer |
 | Cart | `GET /cart`, `POST /cart/add`, `PUT /cart/update`, `DELETE /cart/remove/:productId` | Customer |
 | Orders | `GET /orders`, `GET /orders/:id` | Logged-in |
+| Demo checkout | `POST /orders/demo` | Customer; explicitly enabled outside production |
 | Fulfillment | `PUT /orders/:orderId/items/:itemId/fulfillment` | Owning seller |
 | Payments | `POST /payments/razorpay/order`, `POST /payments/razorpay/verify`, `POST /payments/razorpay/order/:id/cancel` | Customer |
 | Payment webhook | `POST /payments/razorpay/webhook` | Razorpay HMAC signature |
@@ -88,6 +89,8 @@ Razorpay creates and verifies payments; the backend calculates prices and stores
 Each seller updates fulfillment only for their own paid order items, one step at a time: `pending → confirmed → shipped → delivered`. The overall order status is derived from all its items; mixed item statuses show as `partially_fulfilled`. Admins can view orders and payment status but cannot change fulfillment or overall order status.
 
 The seller dashboard uses a low-stock threshold of 5 units. Cloud image storage, seller payouts, refunds, and production deployment are outside the initial scope.
+
+For local demonstrations only, set `DEMO_CHECKOUT_ENABLED=true` in the backend `.env` and `VITE_DEMO_CHECKOUT_ENABLED=true` in the frontend `.env` to show a no-gateway demo order button. Demo checkout recalculates prices and reserves stock on the backend. The backend rejects this route when `NODE_ENV=production`.
 
 ## Tests
 

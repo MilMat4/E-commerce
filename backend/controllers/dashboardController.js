@@ -18,7 +18,12 @@ const getAdminDashboard = async (req, res) => {
       User.countDocuments({ role: 'seller', status: 'pending', isApprovedSeller: false }),
       Product.countDocuments({ status: 'active' }),
       Order.countDocuments({ paymentStatus: { $in: ['paid', 'not_required'] } }),
-      Order.countDocuments({ orderStatus: 'cancelled' }),
+      Order.countDocuments({
+        $or: [
+          { orderStatus: 'cancelled' },
+          { paymentStatus: 'failed' },
+        ],
+      }),
     ]);
 
     return res.status(200).json({
@@ -69,13 +74,17 @@ const getCustomerDashboard = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('wishlist cart');
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-    const [totalOrders, pendingOrders] = await Promise.all([
-      Order.countDocuments({ customer: user._id, paymentStatus: { $in: ['paid', 'not_required'] } }),
+    const visibleOrders = { customer: user._id, paymentStatus: { $in: ['paid', 'not_required'] } };
+    const [totalOrders, pendingOrders, recentOrders] = await Promise.all([
+      Order.countDocuments(visibleOrders),
       Order.countDocuments({
-        customer: user._id,
+        ...visibleOrders,
         orderStatus: 'pending',
-        paymentStatus: { $in: ['paid', 'not_required'] },
       }),
+      Order.find(visibleOrders)
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .select('orderStatus totalAmount paymentStatus createdAt items.productName items.quantity items.unitPrice items.fulfillmentStatus'),
     ]);
 
     return res.status(200).json({
@@ -85,6 +94,7 @@ const getCustomerDashboard = async (req, res) => {
         cartItems: user.cart.reduce((count, item) => count + item.quantity, 0),
         totalOrders,
         pendingOrders,
+        recentOrders,
       },
     });
   } catch (error) {

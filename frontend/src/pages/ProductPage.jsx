@@ -13,6 +13,8 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null)
   const [status, setStatus] = useState('loading')
   const [loadedProductId, setLoadedProductId] = useState('')
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [imageUnavailable, setImageUnavailable] = useState(false)
   const [cartStatus, setCartStatus] = useState('')
   const [addingToCart, setAddingToCart] = useState(false)
   const [savingWish, setSavingWish] = useState(false)
@@ -32,6 +34,8 @@ export default function ProductPage() {
     api.get(`/products/${productId}`, { signal: controller.signal })
       .then(({ data }) => {
         setProduct(data.product)
+        setSelectedImageIndex(0)
+        setImageUnavailable(false)
         setLoadedProductId(productId)
         setStatus('success')
       })
@@ -88,7 +92,7 @@ export default function ProductPage() {
     return <div className="page-message"><h1>Something didn’t load.</h1><p>Check that the backend is running, then try again.</p></div>
   }
 
-  const productImage = imageUrl(product.images?.[0], apiOrigin)
+  const productImage = imageUrl(product.images?.[selectedImageIndex], apiOrigin)
   const saved = isSaved(product._id)
 
   const addToCart = async () => {
@@ -175,10 +179,33 @@ export default function ProductPage() {
     <section className="product-detail section-wrap">
       <Link className="back-link" to="/products">← Back to all finds</Link>
       <div className="product-detail-grid">
-        <div className="detail-image image-tone-1">
-          {productImage
-            ? <img alt={product.name} src={productImage} />
+        <div className="detail-image-gallery">
+          <div className="detail-image image-tone-1">
+            {productImage && !imageUnavailable
+            ? <img alt={product.name} onError={() => setImageUnavailable(true)} src={productImage} />
             : <span className="image-placeholder" aria-hidden="true">{product.name.slice(0, 1)}</span>}
+          </div>
+          {product.images?.length > 1 && (
+            <div className="detail-image-thumbnails" aria-label="Product images">
+              {product.images.map((image, index) => {
+                const thumbnail = imageUrl(image, apiOrigin)
+                return (
+                  <button
+                    aria-label={`View product image ${index + 1}`}
+                    aria-pressed={selectedImageIndex === index}
+                    className={selectedImageIndex === index ? 'is-selected' : ''}
+                    key={`${image}-${index}`}
+                    onClick={() => { setSelectedImageIndex(index); setImageUnavailable(false) }}
+                    type="button"
+                  >
+                    {thumbnail
+                      ? <img alt="" onError={(event) => { event.currentTarget.hidden = true }} src={thumbnail} />
+                      : <span>{index + 1}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
         <div className="detail-copy">
           <p className="eyebrow">{product.category?.name || 'A thoughtful find'}</p>
